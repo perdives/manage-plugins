@@ -26,7 +26,7 @@ class Environment {
 	public static function detect() {
 		// Method 1: Check for WP_ENV environment variable (allows override).
 		$env = getenv( 'WP_ENV' );
-		if ( false !== $env && ! empty( $env ) ) {
+		if ( $env !== false && ! empty( $env ) ) {
 			return $env;
 		}
 

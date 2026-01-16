@@ -61,7 +61,7 @@ class PluginManager {
 	 * @return array
 	 */
 	private function get_disabled_plugins() {
-		if ( null === $this->disabled_plugins ) {
+		if ( $this->disabled_plugins === null ) {
 			$this->disabled_plugins = $this->config_loader->get_disabled_plugins();
 		}
 		return $this->disabled_plugins;
@@ -73,7 +73,7 @@ class PluginManager {
 	 * @return array
 	 */
 	private function get_required_plugins() {
-		if ( null === $this->required_plugins ) {
+		if ( $this->required_plugins === null ) {
 			$this->required_plugins = $this->config_loader->get_required_plugins();
 		}
 		return $this->required_plugins;

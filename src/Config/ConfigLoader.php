@@ -59,14 +59,14 @@ class ConfigLoader {
 
 		// Try to read the config file.
 		$json_content = @file_get_contents( $this->config_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Intentional error suppression for file read.
-		if ( false === $json_content ) {
+		if ( $json_content === false ) {
 			$this->handle_config_error( 'Failed to read config file: ' . $this->config_file );
 			return;
 		}
 
 		$config = json_decode( $json_content, true );
 
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			$this->handle_config_error( 'Failed to parse config file: ' . json_last_error_msg() );
 			return;
 		}
@@ -85,7 +85,7 @@ class ConfigLoader {
 		error_log( $log_message );
 
 		// Only die if we're in a non-production environment.
-		if ( 'production' !== $this->environment ) {
+		if ( $this->environment !== 'production' ) {
 			wp_die(
 				'<h1>Plugin Configuration Error</h1>' .
 				'<p>' . esc_html( $error_message ) . '</p>' .

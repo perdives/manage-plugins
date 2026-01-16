@@ -49,7 +49,7 @@ class Plugin {
 	 * @return Plugin
 	 */
 	public static function get_instance() {
-		if ( null === self::$instance ) {
+		if ( self::$instance === null ) {
 			self::$instance = new self();
 		}
 
