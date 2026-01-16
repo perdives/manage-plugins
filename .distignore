@@ -16,11 +16,6 @@ phpcs.xml.dist
 README.md
 CHANGELOG.md
 
-# Testing
-tests
-phpunit.xml
-phpunit.xml.dist
-
 # Cache files
 .phpcs.cache
 

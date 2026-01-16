@@ -305,12 +305,6 @@ Compare your config with actual plugin paths in `wp-content/plugins/`.
 composer install
 ```
 
-### Running Tests
-
-```bash
-composer test
-```
-
 ### Code Standards
 
 ```bash

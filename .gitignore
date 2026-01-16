@@ -29,8 +29,3 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Testing
-/tests/coverage/
-/tests/_output/
-.phpunit.result.cache
-phpunit.xml
