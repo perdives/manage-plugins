@@ -1,0 +1,84 @@
+name: Release PR Checks
+
+on:
+  pull_request:
+    branches:
+      - release
+
+jobs:
+  version-check:
+    name: Version Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get plugin version from PR
+        id: pr-version
+        uses: perdives/wp-plugin-actions/get-plugin-version@main
+        with:
+          plugin_file: 'manage-plugins.php'
+
+      - name: Check out release branch
+        run: git checkout release
+
+      - name: Get plugin version from release
+        id: release-version
+        uses: perdives/wp-plugin-actions/get-plugin-version@main
+        with:
+          plugin_file: 'manage-plugins.php'
+
+      - name: Compare versions
+        run: |
+          PR_VERSION="${{ steps.pr-version.outputs.version }}"
+          RELEASE_VERSION="${{ steps.release-version.outputs.version }}"
+
+          echo "PR Version: $PR_VERSION"
+          echo "Release Version: $RELEASE_VERSION"
+
+          if [ "$PR_VERSION" = "$RELEASE_VERSION" ]; then
+            echo "❌ Error: Version must be bumped in manage-plugins.php"
+            exit 1
+          fi
+
+          echo "✅ Version has been updated"
+
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPCS
+        run: composer phpcs:check
+
+  phpunit:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run tests
+        run: composer test

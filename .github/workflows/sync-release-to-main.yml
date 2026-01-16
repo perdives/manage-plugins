@@ -1,0 +1,31 @@
+name: Sync Release to Main
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release
+          fetch-depth: 0
+
+      - name: Create PR to main
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: release
+          destination_branch: main
+          pr_title: "Sync release ${{ github.event.release.tag_name }} to main"
+          pr_body: |
+            This PR syncs the release branch to main after publishing release ${{ github.event.release.tag_name }}.
+
+            **Release Notes:**
+            ${{ github.event.release.body }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

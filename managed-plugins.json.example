@@ -1,0 +1,55 @@
+{
+  "_comment": "Configuration file for Perdives Manage Plugins",
+  "_info": "Place this file at: /config/managed-plugins.json (in your project root, one level above ABSPATH)",
+
+  "environments": {
+    "production": {
+      "disabled": [
+        "debug-bar/debug-bar.php",
+        "query-monitor/query-monitor.php",
+        "developer-tools/developer-tools.php"
+      ],
+      "required": [
+        "wordfence/wordfence.php",
+        "wp-rocket/wp-rocket.php"
+      ]
+    },
+    "staging": {
+      "disabled": [
+        "wp-rocket/wp-rocket.php"
+      ],
+      "required": [
+        "query-monitor/query-monitor.php"
+      ]
+    },
+    "development": {
+      "disabled": [
+        "wordfence/wordfence.php",
+        "wp-rocket/wp-rocket.php"
+      ],
+      "required": [
+        "debug-bar/debug-bar.php",
+        "query-monitor/query-monitor.php"
+      ]
+    }
+  },
+
+  "global": {
+    "_comment": "Global rules apply to ALL environments",
+    "disabled": [
+      "broken-plugin/plugin.php",
+      "deprecated-plugin/index.php"
+    ],
+    "required": [
+      "essential-plugin/essential-plugin.php"
+    ]
+  },
+
+  "_notes": {
+    "plugin_paths": "Use the plugin folder/file.php format (e.g., 'akismet/akismet.php')",
+    "disabled": "Plugins in 'disabled' will be prevented from loading",
+    "required": "Plugins in 'required' will be forced to activate (if installed)",
+    "priority": "Global rules are processed first, then environment-specific rules",
+    "environment_detection": "Checks WP_ENV, WP_ENVIRONMENT_TYPE, or deployer's .environment file"
+  }
+}

@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="ManagePlugins" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/squizlabs/PHP_CodeSniffer/master/phpcs.xsd">
+
+    <description>WordPress Coding Standards for Manage Plugins</description>
+
+    <!-- Use Perdives Coding Standards as base -->
+    <rule ref="Perdives"/>
+
+    <!-- What to scan -->
+    <file>.</file>
+
+    <!-- Exclude patterns -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*.js</exclude-pattern>
+    <exclude-pattern>*.css</exclude-pattern>
+
+    <!-- Strip the filepaths down to the relevant bit -->
+    <arg name="basepath" value="./"/>
+
+    <!-- Check up to 20 files simultaneously -->
+    <arg name="parallel" value="20"/>
+
+    <!-- Enables caching for better performance -->
+    <arg name="cache" value=".phpcs.cache"/>
+
+    <!-- Only check PHP files -->
+    <arg name="extensions" value="php"/>
+
+    <!-- Project-specific overrides -->
+
+    <!-- Enforce WordPress naming conventions -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <!-- Set the plugin prefix -->
+            <property name="prefixes" type="array">
+                <element value="perdives_manage_plugins"/>
+                <element value="Perdives\ManagePlugins"/>
+                <element value="PERDIVES_MANAGE_PLUGINS"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Override minimum PHP version (Perdives default is 7.4) -->
+    <config name="testVersion" value="7.4-"/>
+
+    <!-- Override minimum WordPress version (Perdives default is 5.8) -->
+    <config name="minimum_supported_wp_version" value="5.0"/>
+
+    <!-- Make missing translator comments a warning -->
+    <rule ref="WordPress.WP.I18n.MissingTranslatorsComment">
+        <type>warning</type>
+    </rule>
+
+</ruleset>
