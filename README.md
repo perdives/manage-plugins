@@ -2,7 +2,7 @@
 
 A WordPress plugin that gives you fine-grained control over which plugins are allowed to run. Manage plugin activation through configuration with support for environment-based rules and global settings.
 
-[![Download](https://img.shields.io/badge/Download-Latest%20Release-brightgreen)](https://github.com/perdives/manage-plugins/releases/latest/download/manage-plugins.zip)
+[![Download](https://img.shields.io/badge/Download-Latest%20Release-brightgreen)](https://github.com/perdives/manage-plugins/releases/latest)
 
 ## Features
 
@@ -10,7 +10,8 @@ A WordPress plugin that gives you fine-grained control over which plugins are al
 - **Require Plugins**: Force specific plugins to activate (if installed)
 - **Environment-Based Rules**: Different rules for production, staging, and development
 - **Global Rules**: Apply rules across all environments
-- **Early Execution**: Runs as an MU-plugin before all other plugins load
+- **Early Execution**: Runs as an MU-plugin before all other plugins load, and installs its own MU-plugin loader on activation
+- **Database-safe**: Rules are applied at runtime only; the stored list of active plugins is never changed
 - **Zero UI**: Configuration through version-controllable JSON file
 - **Graceful Fallback**: Works even if config file is missing
 
@@ -45,9 +46,13 @@ cp vendor/perdives/manage-plugins/mu-plugin-loader.php wp-content/mu-plugins/
 
 ### Option 2: Manual Installation
 
-1. Download the [latest release](https://github.com/perdives/manage-plugins/releases/latest/download/manage-plugins.zip)
-2. Extract to `wp-content/plugins/manage-plugins/`
-3. Copy `mu-plugin-loader.php` to `wp-content/mu-plugins/`
+1. Download `manage-plugins-x.y.z.zip` from the [latest release](https://github.com/perdives/manage-plugins/releases/latest)
+2. Upload it via **Plugins → Add New → Upload Plugin** (or extract to `wp-content/plugins/manage-plugins/`)
+3. Activate it
+
+On activation the plugin writes `wp-content/mu-plugins/manage-plugins-loader.php`, a small loader that makes it run as an MU-plugin. Deactivating removes the loader again. If the loader goes missing while the plugin is active, it is re-created on the next admin request. If `wp-content/mu-plugins/` isn't writable, an admin notice shows the file to create by hand.
+
+The generated loader refers to `WP_PLUGIN_DIR` (no absolute paths), so it keeps working when the site is moved, and it does nothing when the plugin folder has been removed. When a manually copied `mu-plugin-loader.php` is present (Composer installs), no loader is generated.
 
 ### Why the MU-Plugin Loader?
 
@@ -55,7 +60,7 @@ WordPress loads plugins in this order:
 1. **MU-plugins** (must-use plugins) - loaded first
 2. **Regular plugins** - loaded second
 
-To properly control which plugins load, this plugin **must run before** other plugins. The MU-plugin loader ensures this happens automatically.
+To properly control which plugins load, this plugin **must run before** other plugins. The MU-plugin loader ensures this happens automatically. When the plugin is loaded as a regular plugin only, it applies no rules and shows an admin notice.
 
 ## Configuration
 
@@ -168,6 +173,9 @@ echo "staging" > ~/deploy/shared/.environment
    - **Removes disabled plugins** from the active list
    - **Adds required plugins** to the active list (if installed)
 5. WordPress loads only the filtered plugins
+6. When WordPress saves the active plugins list (for example when an admin activates another plugin), the stored state of managed plugins is restored first: disabled plugins that are really active stay active in the database, and required plugins that were only added at runtime are not written to it. Without this, any plugin (de)activation in an environment with rules would permanently persist those rules.
+
+If a plugin is listed as both disabled and required, **required wins**.
 
 ## Error Handling
 

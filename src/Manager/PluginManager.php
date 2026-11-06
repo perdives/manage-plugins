@@ -53,6 +53,12 @@ class PluginManager {
 		// Filter active plugins before WordPress loads them.
 		add_filter( 'option_active_plugins', array( $this, 'filter_active_plugins' ), 1 );
 		add_filter( 'site_option_active_sitewide_plugins', array( $this, 'filter_network_active_plugins' ), 1 );
+
+		// When WordPress saves the (filtered) list, e.g. because an admin activates another
+		// plugin, restore the stored state of managed plugins so the rules never end up
+		// persisted in the database.
+		add_filter( 'pre_update_option_active_plugins', array( $this, 'protect_active_plugins' ), PHP_INT_MAX );
+		add_filter( 'pre_update_site_option_active_sitewide_plugins', array( $this, 'protect_network_active_plugins' ), PHP_INT_MAX );
 	}
 
 	/**
@@ -131,6 +137,100 @@ class PluginManager {
 		}
 
 		return $filtered;
+	}
+
+	/**
+	 * Restore the stored state of managed plugins before the active plugins list is saved.
+	 *
+	 * Disabled plugins that are really active stay active in the database; required
+	 * plugins that were only added at runtime are not written to it.
+	 *
+	 * @param array $value New active plugins.
+	 * @return array Active plugins to store.
+	 */
+	public function protect_active_plugins( $value ) {
+		if ( ! is_array( $value ) ) {
+			return $value;
+		}
+
+		$stored   = self::get_stored_active_plugins();
+		$required = $this->get_required_plugins();
+
+		foreach ( array_intersect( $stored, $this->get_disabled_plugins() ) as $plugin ) {
+			if ( ! in_array( $plugin, $value, true ) ) {
+				$value[] = $plugin;
+			}
+		}
+
+		$value = array_filter(
+			$value,
+			function ( $plugin ) use ( $stored, $required ) {
+				return in_array( $plugin, $stored, true ) || ! in_array( $plugin, $required, true );
+			}
+		);
+
+		return array_values( array_unique( $value ) );
+	}
+
+	/**
+	 * Restore the stored state of managed plugins before the network active plugins list is saved.
+	 *
+	 * @param array $value New network active plugins ('plugin/file.php' => timestamp).
+	 * @return array Network active plugins to store.
+	 */
+	public function protect_network_active_plugins( $value ) {
+		if ( ! is_array( $value ) ) {
+			return $value;
+		}
+
+		$stored   = self::get_stored_network_active_plugins();
+		$required = $this->get_required_plugins();
+
+		foreach ( $this->get_disabled_plugins() as $plugin ) {
+			if ( isset( $stored[ $plugin ] ) && ! isset( $value[ $plugin ] ) ) {
+				$value[ $plugin ] = $stored[ $plugin ];
+			}
+		}
+
+		foreach ( $required as $plugin ) {
+			if ( ! isset( $stored[ $plugin ] ) ) {
+				unset( $value[ $plugin ] );
+			}
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the active plugins as stored in the database, bypassing the option cache and filters.
+	 *
+	 * @return array Active plugin paths.
+	 */
+	public static function get_stored_active_plugins() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Must bypass the (filtered) option cache.
+		$value = maybe_unserialize( (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", 'active_plugins' ) ) );
+
+		return is_array( $value ) ? $value : array();
+	}
+
+	/**
+	 * Get the network active plugins as stored in the database, bypassing the cache and filters.
+	 *
+	 * @return array Network active plugins ('plugin/file.php' => timestamp).
+	 */
+	public static function get_stored_network_active_plugins() {
+		global $wpdb;
+
+		if ( ! is_multisite() ) {
+			return array();
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Must bypass the (filtered) option cache.
+		$value = maybe_unserialize( (string) $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->sitemeta} WHERE meta_key = %s AND site_id = %d", 'active_sitewide_plugins', get_current_network_id() ) ) );
+
+		return is_array( $value ) ? $value : array();
 	}
 
 	/**

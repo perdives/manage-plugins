@@ -13,6 +13,18 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      # Use the version from the plugin header, so the draft's tag matches the tag
+      # build-release.yml uploads the zip to (instead of a label-derived version).
+      - name: Get plugin version
+        id: version
+        uses: perdives/wp-plugin-actions/get-plugin-version@main
+        with:
+          plugin_file: 'manage-plugins.php'
+
       - uses: release-drafter/release-drafter@v5
+        with:
+          version: ${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

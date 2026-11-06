@@ -3,7 +3,7 @@
  * Plugin Name: Manage Plugins
  * Plugin URI: https://perdives.com/plugins/manage-plugins
  * Description: Manage which WordPress plugins are allowed to run. Control plugin activation through configuration with support for environment-based rules and global settings.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author: Perdives
@@ -35,6 +35,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Loaded twice when running as must-use plugin (loader + regular plugin list): only boot once.
+if ( defined( 'PERDIVES_MANAGE_PLUGINS_FILE' ) ) {
+	return;
+}
+
+define( 'PERDIVES_MANAGE_PLUGINS_FILE', __FILE__ );
+
 /**
  * Initialize the Manage Plugins plugin.
  */
@@ -61,8 +68,13 @@ $perdives_manage_plugins_update_checker = YahnisElsts\PluginUpdateChecker\v5\Puc
 	'manage-plugins'
 );
 
-// Check for GitHub releases instead of branch commits.
-$perdives_manage_plugins_update_checker->getVcsApi()->enableReleaseAssets();
+// Check for GitHub releases instead of branch commits. Releases also carry a .sha256
+// checksum file, so only accept the zip as update package.
+$perdives_manage_plugins_update_checker->getVcsApi()->enableReleaseAssets( '/\.zip$/i' );
+
+// Install the must-use loader on activation, remove it on deactivation.
+register_activation_hook( __FILE__, array( Perdives\ManagePlugins\MuLoader::class, 'install' ) );
+register_deactivation_hook( __FILE__, array( Perdives\ManagePlugins\MuLoader::class, 'remove' ) );
 
 // Initialize the plugin immediately (not on plugins_loaded).
 // This must run early to filter plugins before they load.
